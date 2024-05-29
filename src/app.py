@@ -67,6 +67,37 @@ def serve_any_other_file(path):
     response.cache_control.max_age = 0  # avoid cache memory
     return response
 
+@app.route('/api/login', methods=['POST'])
+def login():
+    email = request.json.get("email")
+    password = request.json.get("password")
+    
+    if not email or not password:
+        return jsonify({"message": "Missing email or password"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    
+    if user is None or not check_password_hash(user.password, password):
+        return jsonify({"message": "Invalid email or password"}), 401
+    
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token), 200
+
+@app.route('/api/check_user', methods=['GET'])
+def check_user():
+    email = request.args.get("email")
+    
+    if not email:
+        return jsonify({"message": "Missing email parameter"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    
+    if user is None:
+        return jsonify({"message": "User does not exist"}), 404
+    
+    return jsonify({"message": "User exists"}), 200
+
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
